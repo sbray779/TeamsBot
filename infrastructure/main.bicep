@@ -31,9 +31,15 @@ param modelVersion string = '1106-Preview'
 @description('Microsoft App ID for the bot')
 param microsoftAppId string
 
-@description('Microsoft App Password for the bot')
+@description('Microsoft App Password for the bot (fallback when Key Vault is not used)')
 @secure()
-param microsoftAppPassword string
+param microsoftAppPassword string = ''
+
+@description('Name of an existing Key Vault that contains the Microsoft App Password secret (optional)')
+param keyVaultName string = ''
+
+@description('Name of the secret in Key Vault that stores the Microsoft App Password')
+param microsoftAppPasswordSecretName string = 'MicrosoftAppPassword'
 
 // Azure OpenAI Service
 resource openAiService 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
@@ -82,6 +88,9 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
 resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   name: webAppName
   location: location
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     serverFarmId: appServicePlan.id
     siteConfig: {
@@ -91,9 +100,10 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
           name: 'MicrosoftAppId'
           value: microsoftAppId
         }
+        // If a Key Vault name is provided, point the app setting at the Key Vault secret
         {
           name: 'MicrosoftAppPassword'
-          value: microsoftAppPassword
+          value: (empty(keyVaultName) == false) ? '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${microsoftAppPasswordSecretName})' : microsoftAppPassword
         }
         {
           name: 'AZURE_OPENAI_ENDPOINT'
@@ -120,6 +130,22 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   }
 }
 
+// If a Key Vault name was provided, reference the existing Key Vault and grant the web app access
+resource keyVault 'Microsoft.KeyVault/vaults@2021-06-01-preview' existing = if (empty(keyVaultName) == false) {
+  name: keyVaultName
+}
+
+resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = if (empty(keyVaultName) == false) {
+  // Use a deterministic GUID for the role assignment name. Use webApp.id (known at start) rather than principalId.
+  name: guid(keyVault.id, webApp.id, 'kvRole')
+  scope: keyVault
+  properties: {
+    // Key Vault Secrets User role (allows getting secrets)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
+    principalId: webApp.identity.principalId
+  }
+}
+
 // Bot Service
 resource botService 'Microsoft.BotService/botServices@2022-09-15' = {
   name: botServiceName
@@ -135,8 +161,7 @@ resource botService 'Microsoft.BotService/botServices@2022-09-15' = {
     msaAppId: microsoftAppId
     luisAppIds: []
     schemaTransformationVersion: '1.3'
-    isCmekEnabled: false
-    isIsolated: false
+  isCmekEnabled: false
   }
 }
 
