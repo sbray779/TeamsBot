@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "openAiName": {
+      "value": "openai-teamsbot-dev"
+    },
+    "botServiceName": {
+      "value": "botservice-teamsbot-dev"
+    },
+    "appServicePlanName": {
+      "value": "asp-teamsbot-dev"
+    },
+    "webAppName": {
+      "value": "webapp-teamsbot-dev"
+    },
+    "location": {
+      "value": "East US"
+    },
+    "appServicePlanSku": {
+      "value": "B1"
+    },
+    "openAiSku": {
+      "value": "S0"
+    },
+    "modelDeploymentName": {
+      "value": "gpt-4"
+    },
+    "modelName": {
+      "value": "gpt-4"
+    },
+    "modelVersion": {
+      "value": "1106-Preview"
+    },
+    "microsoftAppId": {
+      "value": "REPLACE_WITH_YOUR_BOT_APP_ID"
+    },
+    "microsoftAppPassword": {
+      "value": "REPLACE_WITH_YOUR_BOT_APP_PASSWORD"
+    }
+  }
+}
