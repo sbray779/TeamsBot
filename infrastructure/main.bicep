@@ -159,6 +159,10 @@ resource botService 'Microsoft.BotService/botServices@2022-09-15' = {
     iconUrl: 'https://docs.botframework.com/static/devportal/client/images/bot-framework-default.png'
     endpoint: 'https://${webApp.properties.defaultHostName}/api/messages'
     msaAppId: microsoftAppId
+    // Configure the Bot Service to accept the Web App's managed identity as the bot identity
+    // msaAppMSIResourceId expects the resource id of the MSI; for system-assigned identity we can provide the web app resource id
+    msaAppMSIResourceId: webApp.id
+    msaAppType: 'MSI'
     luisAppIds: []
     schemaTransformationVersion: '1.3'
   isCmekEnabled: false
