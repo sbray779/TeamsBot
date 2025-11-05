@@ -80,6 +80,9 @@ def init_func(argv):
     """Initialize the bot application."""
     config = DefaultConfig()
 
+    if config.USE_MANAGED_IDENTITY:
+        logger.info("Running with managed identity (USE_MANAGED_IDENTITY=true). The app will not require MicrosoftAppPassword.")
+
     # Create adapter
     settings = ConfigurationBotFrameworkAuthentication(config)
     adapter = AdapterWithErrorHandler(settings)
